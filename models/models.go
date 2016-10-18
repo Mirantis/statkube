@@ -54,3 +54,14 @@ type PullRequest struct {
 	Developer    Developer
 	DeveloperId  int
 }
+
+func Migrate(db *gorm.DB) {
+	db.AutoMigrate(
+		&Developer{},
+		&Account{},
+		&Email{},
+		&Company{},
+		&WorkPeriod{},
+		&PullRequest{},
+	)
+}
