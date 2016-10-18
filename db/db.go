@@ -18,7 +18,7 @@ import (
 	"os"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 func GetDB() *gorm.DB {
@@ -26,7 +26,7 @@ func GetDB() *gorm.DB {
 	if !exists {
 		panic("Set the value of STATKUBE_DB")
 	}
-	db, err := gorm.Open("sqlite3", dbstring)
+	db, err := gorm.Open("postgres", dbstring)
 	if err != nil {
 		panic("Error connecting to db.\n" + err.Error())
 	}
