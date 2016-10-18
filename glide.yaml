@@ -5,3 +5,5 @@ import:
   subpackages:
   - dialects/postgres
   - dialects/sqlite
+- package: github.com/gin-gonic/gin
+  version: ^1.0.0

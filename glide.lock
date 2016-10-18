@@ -1,6 +1,15 @@
-hash: c3c55624d1a6e3f7aba4261b57e02d52574a8b60f65365a8eab0d073e752b370
-updated: 2016-10-18T10:56:50.398822862+02:00
+hash: 3ad542dbee8dc4708a3980f8ff757e0696a2a367bab64aef133a0a2c1f04c920
+updated: 2016-10-18T12:30:19.626135774+02:00
 imports:
+- name: github.com/gin-gonic/gin
+  version: 2dae550eb5392006a4582ce9c90016a9b5a74e8b
+  subpackages:
+  - binding
+  - render
+- name: github.com/golang/protobuf
+  version: 2402d76f3d41f928c7902a765dfc872356dd3aad
+  subpackages:
+  - proto
 - name: github.com/jinzhu/gorm
   version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
   subpackages:
@@ -13,6 +22,16 @@ imports:
   subpackages:
   - hstore
   - oid
+- name: github.com/manucorporat/sse
+  version: ee05b128a739a0fb76c7ebd3ae4810c1de808d6d
 - name: github.com/mattn/go-sqlite3
   version: e5a3c16c5c1d80b24f633e68aecd6b0702786d3d
+- name: golang.org/x/net
+  version: f315505cf3349909cdf013ea56690da34e96a451
+  subpackages:
+  - context
+- name: gopkg.in/go-playground/validator.v8
+  version: c193cecd124b5cc722d7ee5538e945bdb3348435
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
 testImports: []
