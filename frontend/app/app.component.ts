@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import * as moment from 'moment/moment';
 import { Developer, TimeConstraint } from './models'
+import { CompanyService } from './company.service'
 
 @Component({
   selector: 'my-app',
@@ -9,13 +10,24 @@ import { Developer, TimeConstraint } from './models'
 	<time-picker [selected_time]="selected_time"></time-picker>
 	<company-list [comps]="comps"></company-list>
 	<dev-list [devs]="devs"></dev-list>
-  `
+  `,
+  providers: [CompanyService]
 })
 
-export class AppComponent {
-  comps = COMPANIES;
+export class AppComponent implements OnInit{
+  comps: Developer[];
   devs = DEVS;
   selected_time = new TimeConstraint("", "", "");
+
+  constructor(private companyService: CompanyService) {};
+
+  getCompanies(): void {
+	  this.companyService.getCompanies().then(comps => this.comps = comps);
+  }
+
+  ngOnInit(): void {
+	  this.getCompanies();
+  }
 }
 
 const DEVS: Developer[] = [
@@ -25,9 +37,4 @@ const DEVS: Developer[] = [
     new Developer("super dev4", 120),
 ];
 
-const COMPANIES: Developer[] =[
-    new Developer("Manimuru", 45561),
-    new Developer("CoreOS", 2),
-    new Developer("GlueGL", 444),
-]
 
