@@ -11,22 +11,15 @@ import (
 type Developer struct {
 	gorm.Model
 	FullName    string `gorm:"not null"`
-	Accounts    []Account
 	Emails      []Email
 	WorkPeriods []WorkPeriod
-}
-
-type Account struct {
-	gorm.Model
-	Developer   Developer
-	DeveloperID int
-	Username    string
+	GithubID    string `gorm:"not null"`
 }
 
 type Email struct {
 	gorm.Model
 	Developer   Developer
-	DeveloperID int
+	DeveloperID uint
 	Email       string `gorm:"not null, unique"`
 }
 
@@ -39,12 +32,11 @@ type Company struct {
 type WorkPeriod struct {
 	gorm.Model
 	Company     Company
-	CompanyID   int
+	CompanyID   uint
 	Developer   Developer
-	DeveloperID int
+	DeveloperID uint
 	Position    string
-	Started     time.Time `gorm:"null"`
-	Finished    time.Time `gorm:"not null"`
+	Finished    *time.Time
 }
 
 type PullRequest struct {
@@ -52,13 +44,12 @@ type PullRequest struct {
 	WorkPeriod   WorkPeriod
 	WorkPeriodId sql.NullInt64
 	Developer    Developer
-	DeveloperId  int
+	DeveloperId  uint
 }
 
 func Migrate(db *gorm.DB) {
 	db.AutoMigrate(
 		&Developer{},
-		&Account{},
 		&Email{},
 		&Company{},
 		&WorkPeriod{},
@@ -68,7 +59,7 @@ func Migrate(db *gorm.DB) {
 
 type DevStats struct {
 	FullName string
-	PRCount  int
+	PRCount  uint
 }
 
 func GetDevStats(db *gorm.DB) ([]DevStats, error) {
@@ -79,7 +70,7 @@ func GetDevStats(db *gorm.DB) ([]DevStats, error) {
 	}
 	for rows.Next() {
 		var name string
-		var count int
+		var count uint
 		err := rows.Scan(&name, &count)
 		if err != nil {
 			return nil, err
