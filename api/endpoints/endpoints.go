@@ -33,3 +33,16 @@ func GetPRStatsDev(c *gin.Context) {
 
 	c.JSON(200, devs)
 }
+
+func GetPRStatsCompany(c *gin.Context) {
+	db := db.GetDB()
+	defer db.Close()
+
+	devs, err := models.GetDevStats(db)
+	if err != nil {
+		c.Error(err)
+		c.JSON(500, []int{})
+	}
+
+	c.JSON(200, devs)
+}
