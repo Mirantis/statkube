@@ -15,7 +15,10 @@
 package main
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"github.com/itsjamie/gin-cors"
 
 	"github.com/Mirantis/statkube/api/endpoints"
 )
@@ -23,8 +26,19 @@ import (
 func main() {
 	r := gin.Default()
 
+	r.Use(cors.Middleware(cors.Config{
+		Origins:         "*",
+		Methods:         "GET",
+		RequestHeaders:  "Origin, Authorization, Content-Type",
+		ExposedHeaders:  "",
+		MaxAge:          50 * time.Second,
+		Credentials:     true,
+		ValidateHeaders: false,
+	}))
+
 	endpoints := map[string]func(*gin.Context){
-		"/prstats/dev": endpoints.GetPRStatsDev,
+		"/prstats/dev":     endpoints.GetPRStatsDev,
+		"/prstats/company": endpoints.GetPRStatsCompany,
 	}
 
 	for k, v := range endpoints {

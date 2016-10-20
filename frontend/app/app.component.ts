@@ -9,7 +9,7 @@ import { CompanyService } from './company.service'
     <h1>STATKUBE</h1>
 	<time-picker [selected_time]="selected_time"></time-picker>
 	<company-list [comps]="comps"></company-list>
-	<dev-list [devs]="devs"></dev-list>
+	<!--dev-list [devs]="devs"></dev-list-->
   `,
   providers: [CompanyService]
 })
