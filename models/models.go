@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -29,6 +28,13 @@ type Company struct {
 	WorkPeriods []WorkPeriod
 }
 
+type Domain struct {
+	gorm.Model
+	Domain    string `gorm:"not null"`
+	Company   Company
+	CompanyID uint `gorm:"not null"`
+}
+
 type WorkPeriod struct {
 	gorm.Model
 	Company     Company
@@ -36,16 +42,20 @@ type WorkPeriod struct {
 	Developer   Developer
 	DeveloperID uint
 	Position    string
-	Finished    *time.Time
+	Started     time.Time
+	Finished    time.Time
 }
 
 type PullRequest struct {
 	gorm.Model
-	WorkPeriod   WorkPeriod
-	WorkPeriodId sql.NullInt64
-	Developer    Developer
-	DeveloperId  uint
-	MergedAt     *time.Time
+	Developer   Developer
+	DeveloperID uint
+	MergedAt    *time.Time
+	Company     Company
+	CompanyID   uint `gorm:"not null"`
+	Url         string
+	Created     time.Time
+	Merged      *time.Time
 }
 
 func Migrate(db *gorm.DB) {
@@ -53,6 +63,7 @@ func Migrate(db *gorm.DB) {
 		&Developer{},
 		&Email{},
 		&Company{},
+		&Domain{},
 		&WorkPeriod{},
 		&PullRequest{},
 	)
