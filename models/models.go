@@ -45,6 +45,7 @@ type PullRequest struct {
 	WorkPeriodId sql.NullInt64
 	Developer    Developer
 	DeveloperId  uint
+	MergedAt     *time.Time
 }
 
 func Migrate(db *gorm.DB) {
@@ -63,8 +64,13 @@ type DevStats struct {
 }
 
 func GetDevStats(db *gorm.DB) ([]DevStats, error) {
+	//TODO: add time logic from GetCompanyStats
 	var developers []DevStats
-	rows, err := db.Table("developers").Select("developers.full_name, COUNT(prs.developer_id)").Joins("left join pull_requests prs on prs.developer_id = developers.id").Group("prs.developer_id").Rows()
+	rows, err := db.Table("developers").
+		Select("developers.full_name, COUNT(prs.developer_id)").
+		Joins("left join pull_requests prs on prs.developer_id = developers.id").
+		Group("prs.developer_id").
+		Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -79,4 +85,31 @@ func GetDevStats(db *gorm.DB) ([]DevStats, error) {
 	}
 
 	return developers, nil
+}
+
+func GetCompanyStats(db *gorm.DB, start, end time.Time) ([]DevStats, error) {
+	var stats []DevStats
+
+	rows, err := db.Table("companies").
+		Select("companies.name, COUNT(pull_requests.id)").
+		Joins("join work_periods on work_periods.company_id=companies.id").
+		Where("1=1"). //filter by start and end date when it's available
+		Joins("left join pull_requests on pull_requests.work_period_id=work_periods.id").
+		Group("companies.id").
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var name string
+		var count uint
+		err := rows.Scan(&name, &count)
+		if err != nil {
+			return nil, err
+		}
+		stats = append(stats, DevStats{name, count})
+	}
+
+	return stats, nil
 }
