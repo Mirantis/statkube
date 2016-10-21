@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+
 import * as moment from 'moment/moment';
+import 'chartjs';
+
 import { Developer, TimeConstraint } from './models'
 import { CompanyService } from './company.service'
 
@@ -8,6 +11,7 @@ import { CompanyService } from './company.service'
   template: `
     <h1>STATKUBE</h1>
 	<time-picker [selected_time]="selected_time"></time-picker>
+	<button type="button" class="btn btn-primary" (click)="filter()">Filter by date</button>
 	<company-list [comps]="comps"></company-list>
 	<!--dev-list [devs]="devs"></dev-list-->
   `,
@@ -22,7 +26,11 @@ export class AppComponent implements OnInit{
   constructor(private companyService: CompanyService) {};
 
   getCompanies(): void {
-	  this.companyService.getCompanies().then(comps => this.comps = comps);
+	  this.companyService.getCompanies(this.selected_time).then(comps => this.comps = comps);
+  }
+
+  filter(): void{
+	  this.getCompanies();
   }
 
   ngOnInit(): void {

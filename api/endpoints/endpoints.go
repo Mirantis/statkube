@@ -15,6 +15,8 @@
 package endpoints
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/Mirantis/statkube/db"
@@ -35,10 +37,24 @@ func GetPRStatsDev(c *gin.Context) {
 }
 
 func GetPRStatsCompany(c *gin.Context) {
+	format := "2006-01-02"
+	start, err := time.Parse(format, c.DefaultQuery("start", "1970-01-01"))
+	if err != nil {
+		c.Error(err)
+		c.JSON(500, []int{})
+	}
+	end, err := time.Parse(format, c.DefaultQuery("end", "2038-01-19"))
+	if err != nil {
+		c.Error(err)
+		c.JSON(500, []int{})
+	}
+
+	gin.Log()
+
 	db := db.GetDB()
 	defer db.Close()
 
-	devs, err := models.GetDevStats(db)
+	devs, err := models.GetCompanyStats(db, start, end)
 	if err != nil {
 		c.Error(err)
 		c.JSON(500, []int{})

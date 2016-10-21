@@ -3,6 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule }   from '@angular/forms';
 import { HttpModule  }   from '@angular/http';
 import { MomentModule }  from 'angular2-moment';
+import { ChartsModule } from 'ng2-charts/ng2-charts';
 
 import { AppComponent }         from './app.component';
 import { TimePickerComponent }  from './time-pick.component';
@@ -14,7 +15,8 @@ import { CompanyListComponent } from './company-list.component';
 	  BrowserModule,
 	  FormsModule,
 	  MomentModule,
-	  HttpModule
+	  HttpModule,
+	  ChartsModule
   ],
   declarations: [
 	  AppComponent,
