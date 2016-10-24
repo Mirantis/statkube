@@ -15,5 +15,16 @@ export class TimeConstraint {
         this.start = start;
         this.end = end;
         this.name = name;
-    }
+    };
+
+	getParams() :string {
+		var params: Array<string> = [];
+		if(this.start != "") {
+			params.push("start=" + this.start);
+		}
+		if(this.end != "") {
+			params.push("end=" + this.end);
+		}
+		return params.join("&");
+	}
 };

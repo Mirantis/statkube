@@ -26,6 +26,8 @@
       'angular-in-memory-web-api': 'npm:angular-in-memory-web-api',
       'moment': 'npm:moment',
       'angular2-moment': 'npm:angular2-moment',
+      'chartjs': 'npm:chart.js/dist/Chart.bundle.js',
+      'ng2-charts': 'npm:ng2-charts',
     },
     // packages tells the System loader how to load when no filename and/or no extension
     packages: {
@@ -46,6 +48,13 @@
       },
       'angular2-moment': {
           main: './index.js',
+          defaultExtension: 'js'
+      },
+      'chart.js': {
+          format: 'global'
+      },
+      'ng2-charts': {
+		  main: './ng2-charts.js',
           defaultExtension: 'js'
       }
     }
