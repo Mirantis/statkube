@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 type Developer struct {
@@ -103,9 +102,8 @@ func GetCompanyStats(db *gorm.DB, start, end time.Time) ([]DevStats, error) {
 
 	rows, err := db.Table("companies").
 		Select("companies.name, COUNT(pull_requests.id)").
-		Joins("join work_periods on work_periods.company_id=companies.id").
-		Where("1=1"). //filter by start and end date when it's available
-		Joins("left join pull_requests on pull_requests.work_period_id=work_periods.id").
+		Joins("left join pull_requests on pull_requests.company_id=companies.id").
+		Where("pull_requests.merged BETWEEN ? AND ?", start, end). //filter by start and end date when it's available
 		Group("companies.id").
 		Rows()
 
