@@ -61,16 +61,20 @@ func deduceFromEmail(pr *github.PullRequest, client *github.Client, db *gorm.DB)
 
 func deduceCompanyAndDev(pr *github.PullRequest, client *github.Client, db *gorm.DB) (*models.Company, *models.Developer) {
 	var workPeriod models.WorkPeriod
+    var company models.Company
+    var developer models.Developer
 	search := db.Joins("JOIN developers ON developers.id = work_periods.developer_id").
 		Where("developers.github_id = ?", pr.User.Login).
 		Where("? BETWEEN work_periods.started AND work_periods.finished", pr.CreatedAt).
 		First(&workPeriod)
+    db.Model(&workPeriod).Related(&company)
+    db.Model(&workPeriod).Related(&developer)
 	if !search.RecordNotFound() {
-		return &workPeriod.Company, &workPeriod.Developer
+		return &company, &developer
 	}
-	company, developer := deduceFromEmail(pr, client, db)
-	if company != nil {
-		return company, developer
+	companyPt, developerPt := deduceFromEmail(pr, client, db)
+	if companyPt != nil {
+		return companyPt, developerPt
 	}
 	return assumeIndependent(pr, db)
 
