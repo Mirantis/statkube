@@ -50,7 +50,6 @@ type PullRequest struct {
 	gorm.Model
 	Developer   Developer
 	DeveloperID uint
-	MergedAt    *time.Time
 	Company     Company
 	CompanyID   uint `gorm:"not null"`
 	Url         string
