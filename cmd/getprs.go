@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/Mirantis/statkube/db"
 	"github.com/Mirantis/statkube/models"
@@ -93,6 +94,11 @@ func handlePR(pr *github.PullRequest, client *github.Client, db *gorm.DB) {
 }
 
 func main() {
+	limitStr := os.Args[1]
+	limit, err := time.Parse("2006-01-02", limitStr)
+	if err != nil {
+		panic(err.Error())
+	}
 	db := db.GetDB()
 	token, exists := os.LookupEnv("GITHUB_TOKEN")
 	if !exists {
@@ -104,8 +110,12 @@ func main() {
 	opt := &github.PullRequestListOptions{
 		ListOptions: github.ListOptions{PerPage: 1000},
 		State:       "closed",
+		Sort:        "updated",
+		Direction:   "desc",
 	}
+
 	for {
+		limitMet := false
 		prs, resp, err := client.PullRequests.List(
 			"kubernetes", "kubernetes", opt,
 		)
@@ -113,9 +123,14 @@ func main() {
 			panic(err.Error())
 		}
 		for _, pr := range prs {
+			//if pr is updated before limit, break as prs are sorted by updatedAt
+			if pr.UpdatedAt.Before(limit) {
+				limitMet = true
+				break
+			}
 			handlePR(pr, client, db)
 		}
-		if resp.NextPage == 0 {
+		if resp.NextPage == 0 || limitMet {
 			break
 		}
 		opt.ListOptions.Page = resp.NextPage
