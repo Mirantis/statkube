@@ -41,6 +41,6 @@ const MOMENT_FORMAT = "YYYY-MM-DD";
 
 const TIMES_SELECTABLE: TimeConstraint[] = [
     new TimeConstraint("", "", ""),
-    new TimeConstraint(moment().startOf("week").format(MOMENT_FORMAT), moment().format(MOMENT_FORMAT), "this week"),
-    new TimeConstraint(moment().startOf("week").subtract(1, 'week').format(MOMENT_FORMAT), moment().startOf("week").format(MOMENT_FORMAT), "last week"),
+    new TimeConstraint(moment().startOf("week").add(1, "day").format(MOMENT_FORMAT), moment().add(1, "day").format(MOMENT_FORMAT), "this week"),
+    new TimeConstraint(moment().startOf("week").subtract(1, 'week').add(1, "day").format(MOMENT_FORMAT), moment().startOf("week").add(1, "day").format(MOMENT_FORMAT), "last week"),
 ]
