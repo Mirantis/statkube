@@ -49,8 +49,6 @@ func GetPRStatsCompany(c *gin.Context) {
 		c.JSON(500, []int{})
 	}
 
-	gin.Log()
-
 	db := db.GetDB()
 	defer db.Close()
 
