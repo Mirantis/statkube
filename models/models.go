@@ -12,6 +12,8 @@ type Developer struct {
 	Emails      []Email
 	WorkPeriods []WorkPeriod
 	GithubID    string `gorm:"not null"`
+	// Just to load the json data from stackalytics
+	LaunchpadID string `gorm:"not null"`
 }
 
 type Email struct {
