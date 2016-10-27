@@ -61,14 +61,14 @@ func deduceFromEmail(pr *github.PullRequest, client *github.Client, db *gorm.DB)
 
 func deduceCompanyAndDev(pr *github.PullRequest, client *github.Client, db *gorm.DB) (*models.Company, *models.Developer) {
 	var workPeriod models.WorkPeriod
-    var company models.Company
-    var developer models.Developer
+	var company models.Company
+	var developer models.Developer
 	search := db.Joins("JOIN developers ON developers.id = work_periods.developer_id").
 		Where("developers.github_id = ?", pr.User.Login).
 		Where("? BETWEEN work_periods.started AND work_periods.finished", pr.CreatedAt).
 		First(&workPeriod)
-    db.Model(&workPeriod).Related(&company)
-    db.Model(&workPeriod).Related(&developer)
+	db.Model(&workPeriod).Related(&company)
+	db.Model(&workPeriod).Related(&developer)
 	if !search.RecordNotFound() {
 		return &company, &developer
 	}
@@ -80,13 +80,13 @@ func deduceCompanyAndDev(pr *github.PullRequest, client *github.Client, db *gorm
 
 }
 
-func handlePR(pr *github.PullRequest, client *github.Client, db *gorm.DB) {
+func handlePR(pr *github.PullRequest, client *github.Client, repository *models.Repository, db *gorm.DB) {
 	var prDB models.PullRequest
 	if pr.MergedAt == nil {
 		return
 	}
 
-	db.FirstOrInit(&prDB, models.PullRequest{Url: *pr.URL})
+	db.FirstOrInit(&prDB, models.PullRequest{Url: *pr.URL, RepositoryID: repository.ID})
 
 	company, developer := deduceCompanyAndDev(pr, client, db)
 
@@ -98,6 +98,7 @@ func handlePR(pr *github.PullRequest, client *github.Client, db *gorm.DB) {
 }
 
 func main() {
+	var repositories []models.Repository
 	limitStr := os.Args[1]
 	limit, err := time.Parse("2006-01-02", limitStr)
 	if err != nil {
@@ -111,33 +112,36 @@ func main() {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	client := github.NewClient(tc)
-	opt := &github.PullRequestListOptions{
-		ListOptions: github.ListOptions{PerPage: 1000},
-		State:       "closed",
-		Sort:        "updated",
-		Direction:   "desc",
-	}
 
-	for {
-		limitMet := false
-		prs, resp, err := client.PullRequests.List(
-			"kubernetes", "kubernetes", opt,
-		)
-		if err != nil {
-			panic(err.Error())
+	db.Find(&repositories)
+	for _, repository := range repositories {
+		opt := &github.PullRequestListOptions{
+			ListOptions: github.ListOptions{PerPage: 1000},
+			State:       "closed",
+			Sort:        "updated",
+			Direction:   "desc",
 		}
-		for _, pr := range prs {
-			//if pr is updated before limit, break as prs are sorted by updatedAt
-			if pr.UpdatedAt.Before(limit) {
-				limitMet = true
+		for {
+			limitMet := false
+			prs, resp, err := client.PullRequests.List(
+				repository.User, repository.Repo, opt,
+			)
+			fmt.Printf("repo: %v found: %v prs\n", repository.Repo, len(prs))
+			if err != nil {
+				panic(err.Error())
+			}
+			for _, pr := range prs {
+				//if pr is updated before limit, break as prs are sorted by updatedAt
+				if pr.UpdatedAt.Before(limit) {
+					limitMet = true
+					break
+				}
+				handlePR(pr, client, &repository, db)
+			}
+			if resp.NextPage == 0 || limitMet {
 				break
 			}
-			handlePR(pr, client, db)
+			opt.ListOptions.Page = resp.NextPage
 		}
-		if resp.NextPage == 0 || limitMet {
-			break
-		}
-		opt.ListOptions.Page = resp.NextPage
-
 	}
 }
