@@ -28,6 +28,7 @@
       'angular2-moment': 'npm:angular2-moment',
       'chartjs': 'npm:chart.js/dist/Chart.bundle.js',
       'ng2-charts': 'npm:ng2-charts',
+      'ng2-table': 'npm:ng2-table',
     },
     // packages tells the System loader how to load when no filename and/or no extension
     packages: {
@@ -55,6 +56,10 @@
       },
       'ng2-charts': {
 		  main: './ng2-charts.js',
+          defaultExtension: 'js'
+      },
+      'ng2-table': {
+		  main: './ng2-table.js',
           defaultExtension: 'js'
       }
     }

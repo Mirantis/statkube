@@ -4,6 +4,7 @@ import { FormsModule }   from '@angular/forms';
 import { HttpModule  }   from '@angular/http';
 import { MomentModule }  from 'angular2-moment';
 import { ChartsModule } from 'ng2-charts/ng2-charts';
+import { Ng2TableModule  } from 'ng2-table/ng2-table';
 
 import { AppComponent }         from './app.component';
 import { TimePickerComponent }  from './time-pick.component';
@@ -16,7 +17,8 @@ import { CompanyListComponent } from './company-list.component';
 	  FormsModule,
 	  MomentModule,
 	  HttpModule,
-	  ChartsModule
+	  ChartsModule,
+	  Ng2TableModule
   ],
   declarations: [
 	  AppComponent,
