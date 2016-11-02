@@ -29,6 +29,18 @@ type user struct {
 	GithubID    string       `json:"github_id"`
 }
 
+func loadRepos(f io.Reader, db *gorm.DB) {
+	var repo string
+	decoder := json.NewDecoder(f)
+	skipToken(decoder, 1) // "["
+	for decoder.More() {
+		decoder.Decode(&repo)
+		var repoDB models.Repository
+		db.FirstOrCreate(&repoDB, models.Repository{User: "kubernetes", Repo: repo})
+	}
+
+}
+
 func handle(u user, db *gorm.DB) {
 	MIN_TIME := time.Unix(0, 0)
 	MAX_TIME := time.Unix(1<<40-1, 0)
@@ -122,9 +134,20 @@ func main() {
 	db := db.GetDB()
 	filename, exists := os.LookupEnv("EMPLOYMENT_FILE")
 	if !exists {
-		filename = "default_data.json"
+		filename = "repos.json"
 	}
 	f, err := os.Open(filename)
+	defer f.Close()
+	if err != nil {
+		panic(fmt.Sprintln("Error opening repos file: %v ", err.Error()))
+	}
+	loadRepos(f, db)
+	filename, exists = os.LookupEnv("EMPLOYMENT_FILE")
+	if !exists {
+		filename = "default_data.json"
+	}
+	f, err = os.Open(filename)
+	defer f.Close()
 	if err != nil {
 		panic(fmt.Sprintln("Error opening file %s: %v ", filename, err.Error()))
 	}

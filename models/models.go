@@ -45,15 +45,23 @@ type WorkPeriod struct {
 	Finished    time.Time
 }
 
+type Repository struct {
+	gorm.Model
+	User string `gorm:"not null"`
+	Repo string `gorm:"not null"`
+}
+
 type PullRequest struct {
 	gorm.Model
-	Developer   Developer
-	DeveloperID uint
-	Company     Company
-	CompanyID   uint `gorm:"not null"`
-	Url         string
-	Created     time.Time
-	Merged      *time.Time
+	Developer    Developer
+	DeveloperID  uint
+	Company      Company
+	CompanyID    uint `gorm:"not null"`
+	Url          string
+	Created      time.Time
+	Merged       *time.Time
+	Repository   Repository
+	RepositoryID uint `gorm:"not null"`
 }
 
 func Migrate(db *gorm.DB) {
@@ -61,6 +69,7 @@ func Migrate(db *gorm.DB) {
 		&Developer{},
 		&Email{},
 		&Company{},
+		&Repository{},
 		&Domain{},
 		&WorkPeriod{},
 		&PullRequest{},
