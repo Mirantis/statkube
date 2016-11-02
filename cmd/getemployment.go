@@ -25,8 +25,9 @@ type employment struct {
 type user struct {
 	Employments []employment `json:"companies"`
 	UserName    string       `json:"user_name"`
-	Emails      []string     `json:"strings"`
+	Emails      []string     `json:"emails"`
 	GithubID    string       `json:"github_id"`
+	LaunchpadID string       `json:"launchpad_id"`
 }
 
 func loadRepos(f io.Reader, db *gorm.DB) {
@@ -41,19 +42,49 @@ func loadRepos(f io.Reader, db *gorm.DB) {
 
 }
 
+// findDeveloper finds the user in the database or initialize it. If necessary, fill the 'github_id'
+func findDeveloper(u *user, db *gorm.DB) *models.Developer {
+	var developer models.Developer
+	// Try to find the user
+	if u.GithubID != "" {
+		search := db.Where("developers.github_id = ?", u.GithubID).First(&developer)
+		if !search.RecordNotFound() {
+			return &developer
+		}
+	}
+	if u.LaunchpadID != "" {
+		search := db.Where("developers.launchpad_id = ?", u.LaunchpadID).First(&developer)
+		if !search.RecordNotFound() {
+			if developer.GithubID != u.GithubID {
+				developer.GithubID = u.GithubID
+				db.Save(&developer)
+			}
+			return &developer
+		}
+	}
+	if u.LaunchpadID == "" && u.GithubID == "" {
+		return nil
+	}
+	developer.LaunchpadID = u.LaunchpadID
+	developer.GithubID = u.GithubID
+	db.Create(&developer)
+	return &developer
+
+}
+
+// handle handles single entry in the json
 func handle(u user, db *gorm.DB) {
 	MIN_TIME := time.Unix(0, 0)
 	MAX_TIME := time.Unix(1<<40-1, 0)
-	if u.GithubID == "" {
+	developer := findDeveloper(&u, db)
+	if developer == nil {
 		return
 	}
-	var developer models.Developer
-	db.FirstOrCreate(&developer, models.Developer{GithubID: u.GithubID})
 	developer.FullName = u.UserName
 	for _, email := range u.Emails {
 		var emailDB models.Email
-		db.FirstOrInit(&email, models.Email{Email: email})
-		emailDB.Developer = developer
+		db.FirstOrInit(&emailDB, models.Email{Email: email})
+		emailDB.DeveloperID = developer.ID
 		db.Save(&emailDB)
 	}
 	startDate := MIN_TIME
@@ -86,6 +117,7 @@ func handle(u user, db *gorm.DB) {
 	}
 }
 
+// skipToken skips given number of tokens in parsed json
 func skipToken(decoder *json.Decoder, n int) {
 	for i := 0; i < n; i++ {
 		_, err := decoder.Token()
@@ -95,6 +127,7 @@ func skipToken(decoder *json.Decoder, n int) {
 	}
 }
 
+// initReader prepares the reader to iterate users
 func initReader(r io.Reader) *json.Decoder {
 	decoder := json.NewDecoder(r)
 	// Skip '{', '"users"', '['
@@ -102,12 +135,12 @@ func initReader(r io.Reader) *json.Decoder {
 	return decoder
 }
 
+// loadCompanies loads data about companies and their domains
 func loadCompanies(decoder *json.Decoder, db *gorm.DB) {
 	for decoder.More() {
 		var company company
 		var companyDB models.Company
 		decoder.Decode(&company)
-		fmt.Printf("Company: %s\n", company)
 		db.FirstOrCreate(&companyDB, models.Company{Name: company.CompanyName})
 		for _, domain := range company.Domains {
 			var domainDB models.Domain
@@ -119,6 +152,7 @@ func loadCompanies(decoder *json.Decoder, db *gorm.DB) {
 	}
 }
 
+// loadEmployment loads data about developers, their emails and work periods
 func loadEmployment(decoder *json.Decoder, db *gorm.DB) {
 	for decoder.More() {
 		var u user
