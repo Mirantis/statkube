@@ -21,7 +21,7 @@ import { CompanyService } from './company.service'
 export class AppComponent implements OnInit{
   comps: Developer[];
   devs = DEVS;
-  selected_time = new TimeConstraint("", "", "");
+  selected_time = new TimeConstraint("2016-05-01", moment().add(1, "day").format("YYYY-MM-DD"), "");
 
   constructor(private companyService: CompanyService) {};
 
@@ -44,5 +44,3 @@ const DEVS: Developer[] = [
     new Developer("super dev3", 5),
     new Developer("super dev4", 120),
 ];
-
-
