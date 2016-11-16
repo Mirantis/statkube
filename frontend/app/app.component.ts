@@ -5,6 +5,7 @@ import 'chartjs';
 
 import { Developer, TimeConstraint } from './models'
 import { CompanyService } from './company.service'
+import { SettingsService } from './settings.service'
 
 @Component({
   selector: 'my-app',
@@ -15,7 +16,7 @@ import { CompanyService } from './company.service'
 	<company-list [comps]="comps"></company-list>
 	<!--dev-list [devs]="devs"></dev-list-->
   `,
-  providers: [CompanyService]
+  providers: [CompanyService, SettingsService]
 })
 
 export class AppComponent implements OnInit{
@@ -23,10 +24,10 @@ export class AppComponent implements OnInit{
   devs = DEVS;
   selected_time = new TimeConstraint("2016-05-01", moment().add(1, "day").format("YYYY-MM-DD"), "");
 
-  constructor(private companyService: CompanyService) {};
+  constructor(private companyService: CompanyService, private settingsService: SettingsService) {};
 
   getCompanies(): void {
-	  this.companyService.getCompanies(this.selected_time).then(comps => this.comps = comps);
+	  this.companyService.getCompanies(this.selected_time, this.settingsService.getSettings()).then(comps => this.comps = comps);
   }
 
   filter(): void{
