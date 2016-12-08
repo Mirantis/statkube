@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mirantis/statkube/models"
 	"github.com/google/go-github/github"
+
+	"github.com/Mirantis/statkube/models"
 )
 
 type staticPRScanner struct {
@@ -27,14 +28,59 @@ func (s *staticPRScanner) Scan() *github.PullRequest {
 type staticGithubProvider struct {
 	prs     []github.PullRequest
 	commits []*github.RepositoryCommit
+	limits  github.Rate
 }
 
-func (s *staticGithubProvider) ListCommits(_, _ string, _ int) ([]*github.RepositoryCommit, error) {
+func (s staticGithubProvider) ListCommits(_, _ string, _ int) ([]*github.RepositoryCommit, error) {
 	return s.commits, nil
 }
 
-func (s *staticGithubProvider) ListPRs(_, _ string, _ time.Time) PRScanner {
+func (s staticGithubProvider) ListPRs(_, _ string, _ time.Time) PRScanner {
 	return &staticPRScanner{prs: s.prs}
+}
+
+func (s staticGithubProvider) GetLimits() *github.Rate {
+	return &s.limits
+}
+
+// TestCheckLimitsOK checks if sleep is not called when limits are not
+// exhausted
+func TestCheckLimitsOK(t *testing.T) {
+	resp := github.Response{
+		Rate: github.Rate{
+			Remaining: 1,
+		},
+	}
+	client := staticGithubProvider{}
+	sleepTill := func(_ time.Time) {
+		t.Error("Called sleep with limits unexhausted")
+	}
+	CheckLimits(resp, client, sleepTill)
+}
+
+// TestCheckLimitsExhausted checks if sleep is called when limits are
+// exhausted
+func TestCheckLimitsExhausted(t *testing.T) {
+	var tillCalled time.Time
+	var tillExpected = time.Unix(1480679000, 0)
+	resp := github.Response{
+		Rate: github.Rate{
+			Remaining: 0,
+			Reset:     github.Timestamp{Time: tillExpected},
+		},
+	}
+	client := staticGithubProvider{
+		limits: github.Rate{
+			Remaining: 1,
+		},
+	}
+	sleepTill := func(till time.Time) {
+		tillCalled = till
+	}
+	CheckLimits(resp, client, sleepTill)
+	if tillCalled != tillExpected {
+		t.Error("Sleep not called with correct time!")
+	}
 }
 
 // TestByWorkPeriod tests finding user that has github_id and work_period found

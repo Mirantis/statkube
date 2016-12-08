@@ -12,13 +12,21 @@ import (
 	"github.com/Mirantis/statkube/models"
 )
 
+// SleepTillFactory returns a SleepTill function that performs sleep to a given timestamp
+func SleepTillFactory(now func() time.Time, sleep func(time.Duration)) func(time.Time) {
+	return func(till time.Time) {
+		sleep(till.Sub(now()))
+	}
+
+}
+
 type PRScanner interface {
 	More() bool
 	Scan() *github.PullRequest
 }
 
 type GithubPRScanner struct {
-	client   *github.Client
+	client   GHClientWrapper
 	data     []*github.PullRequest
 	i        int
 	opt      *github.PullRequestListOptions
@@ -32,15 +40,34 @@ type GithubPRScanner struct {
 // Implementation test...
 var _ PRScanner = &GithubPRScanner{}
 
+func CheckLimits(resp github.Response, client GithubProvider, sleepTill func(time.Time)) {
+	if resp.Rate.Remaining > 0 {
+		return
+	}
+	fmt.Printf("Sleeping till %s\n", resp.Rate.Reset)
+	sleepTill(resp.Rate.Reset.Time)
+
+	for {
+		limit := client.GetLimits()
+		if limit.Remaining > 0 {
+			return
+		}
+		fmt.Printf("Sleeping more till %s\n", limit.Reset.Time)
+		sleepTill(limit.Reset.Time)
+	}
+}
+
 func (s *GithubPRScanner) More() bool {
+	sleepTill := SleepTillFactory(time.Now, time.Sleep)
 	if s.i == len(s.data) {
 		if s.nextPage == 0 {
 			return false
 		}
 		s.opt.ListOptions.Page = s.nextPage
-		data, resp, err := s.client.PullRequests.List(
+		data, resp, err := s.client.client.PullRequests.List(
 			s.user, s.repo, s.opt,
 		)
+		CheckLimits(*resp, s.client, sleepTill)
 		if err != nil {
 			fmt.Printf("%v", err.Error())
 			return false
@@ -63,6 +90,7 @@ func (s *GithubPRScanner) Scan() *github.PullRequest {
 type GithubProvider interface {
 	ListCommits(user string, repo string, pr int) ([]*github.RepositoryCommit, error)
 	ListPRs(user string, repo string, limit time.Time) PRScanner
+	GetLimits() *github.Rate
 }
 
 type GHClientWrapper struct {
@@ -78,17 +106,19 @@ func NewClient(token string) *GHClientWrapper {
 	return &GHClientWrapper{client: github.NewClient(tc)}
 }
 
-func (client *GHClientWrapper) ListCommits(user string, repo string, prNo int) ([]*github.RepositoryCommit, error) {
-	commits, _, err := client.client.PullRequests.ListCommits(
+func (client GHClientWrapper) ListCommits(user string, repo string, prNo int) ([]*github.RepositoryCommit, error) {
+	sleepTill := SleepTillFactory(time.Now, time.Sleep)
+	commits, resp, err := client.client.PullRequests.ListCommits(
 		user, repo, prNo, nil,
 	)
+	CheckLimits(*resp, client, sleepTill)
 	if err != nil {
 		return nil, err
 	}
 	return commits, nil
 }
 
-func (client *GHClientWrapper) ListPRs(user, repo string, limit time.Time) PRScanner {
+func (client GHClientWrapper) ListPRs(user, repo string, limit time.Time) PRScanner {
 	opt := &github.PullRequestListOptions{
 		ListOptions: github.ListOptions{PerPage: 1000},
 		State:       "closed",
@@ -96,8 +126,16 @@ func (client *GHClientWrapper) ListPRs(user, repo string, limit time.Time) PRSca
 		Direction:   "desc",
 	}
 	return &GithubPRScanner{
-		client: client.client, user: user, repo: repo, limit: limit, nextPage: 1, opt: opt,
+		client: client, user: user, repo: repo, limit: limit, nextPage: 1, opt: opt,
 	}
+}
+
+func (client GHClientWrapper) GetLimits() *github.Rate {
+	limits, _, err := client.client.RateLimits()
+	if err != nil {
+		panic(err.Error())
+	}
+	return limits.Core
 }
 
 // getDeveloper gets or creates a Developer object basing on github_id from pr
@@ -136,7 +174,6 @@ func deduceFromWorkPeriod(pr *github.PullRequest, db *gorm.DB) (*models.Company,
 
 // getEmails returns the set of all emails in prs
 func getEmails(pr *github.PullRequest, client GithubProvider, user, repository string) map[string]struct{} {
-	fmt.Printf("%s/%s\n", user, repository)
 	commits, _ := client.ListCommits(
 		user, repository, *pr.Number,
 	)
